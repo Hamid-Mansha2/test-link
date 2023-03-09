@@ -1,0 +1,40 @@
+---
+language: go
+os:
+- linux
+dist: xenial
+sudo: true
+services:
+- docker
+go:
+- 1.17.11
+before_install:
+- sudo apt-get update -yq || true
+- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu
+  $(lsb_release -cs) stable"
+- sudo apt-get update || true
+- sudo apt-get install linux-headers-$(uname -r)
+- DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq dbus nfs-common rpcbind
+  nfs-kernel-server
+- sudo apt-get install libblkid-dev
+- sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+- echo '{"storage-driver":"devicemapper"}' | sudo tee /etc/docker/daemon.json > /dev/null
+- sudo service docker restart
+- sleep 5
+- docker info
+branches:
+  only:
+  - main
+script:
+- make build-ubuntu-code && make travis_test
+- sleep 5
+notifications:
+  email:
+  - recipients:
+    - aditya@portworx.com
+    on_success: change
+    on_failure: always
+after_success:
+- GO111MODULE=off go get github.com/mattn/goveralls
+- goveralls -coverprofile=coverage.txt -service=travis-pro -repotoken $COVERALLS_TOKEN
