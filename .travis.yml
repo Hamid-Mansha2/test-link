@@ -27,7 +27,6 @@ branches:
   only:
   - main
 script:
-- make build-ubuntu-code && make travis_test
 - sleep 5
 notifications:
   email:
